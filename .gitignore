@@ -9,7 +9,9 @@ __pycache__/
 uploads/
 
 # Trained Models
-models/
+models/*.pkl
+models/*.joblib
+models/*.h5
 
 # Environment Variables
 .env
