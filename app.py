@@ -1,5 +1,7 @@
+
 import json
 import pandas as pd
+from agents.insights_report_agent import InsightsReportAgent
 from agents.model_agent import ModelAgent
 from agents.schema_agent import SchemaAgent
 from agents.llm_planner_agent import LLMPlannerAgent
@@ -182,6 +184,116 @@ def main():
         if isinstance(value, (int, float)):
 
             print(f"{metric:<15}: {value:.4f}")
+
+           
+   #######################################################
+
+    separator("AI INSIGHTS REPORT")
+
+    insights_agent = InsightsReportAgent()
+
+    context = insights_agent.run(context)
+
+    report = context["insights_report"]
+
+    print("\n========== EXECUTIVE SUMMARY ==========\n")
+    print(report["executive_summary"])
+
+    print("\n========== KEY INSIGHTS ==========\n")
+
+    for insight in report["key_insights"]:
+        print("- " + insight)
+
+    print("\n========== MODEL PERFORMANCE ==========\n")
+    print(report["model_performance"])
+
+    print("\n========== BUSINESS RECOMMENDATIONS ==========\n")
+
+    for recommendation in report["business_recommendations"]:
+        print("- " + recommendation)
+
+    #######################################################
+
+    separator("AI INSIGHTS REPORT")
+
+    insights_agent = InsightsReportAgent()
+
+    context = insights_agent.run(context)
+
+    report = context["insights_report"]
+
+    print("\n========== EXECUTIVE SUMMARY ==========\n")
+    print(report["executive_summary"])
+
+    print("\n========== KEY INSIGHTS ==========\n")
+
+    for insight in report["key_insights"]:
+        print("- " + insight)
+
+    print("\n========== MODEL PERFORMANCE ==========\n")
+    print(report["model_performance"])
+
+    print("\n========== BUSINESS RECOMMENDATIONS ==========\n")
+
+    for recommendation in report["business_recommendations"]:
+        print("- " + recommendation)
+
+    #######################################################
+
+    separator("AI INSIGHTS REPORT")
+
+    insights_agent = InsightsReportAgent()
+
+    context = insights_agent.run(context)
+
+    report = context["insights_report"]
+
+    print("\n========== EXECUTIVE SUMMARY ==========\n")
+    print(report["executive_summary"])
+
+    print("\n========== KEY INSIGHTS ==========\n")
+
+    for insight in report["key_insights"]:
+        print("- " + insight)
+
+    print("\n========== MODEL PERFORMANCE ==========\n")
+    print(report["model_performance"])
+
+    print("\n========== BUSINESS RECOMMENDATIONS ==========\n")
+
+    for recommendation in report["business_recommendations"]:
+        print("- " + recommendation)
+
+
+     #######################################################
+
+    separator("AI INSIGHTS REPORT")
+
+    insights_agent = InsightsReportAgent()
+
+    context = insights_agent.run(context)
+
+    report = context["insights_report"]
+
+    print("\n========== EXECUTIVE SUMMARY ==========\n")
+    print(report["executive_summary"])
+
+    print("\n========== KEY INSIGHTS ==========\n")
+
+    for insight in report["key_insights"]:
+        print("- " + insight)
+
+    print("\n========== MODEL PERFORMANCE ==========\n")
+    print(report["model_performance"])
+
+    print("\n========== BUSINESS RECOMMENDATIONS ==========\n")
+
+    for recommendation in report["business_recommendations"]:
+        print("- " + recommendation)
+
+    print("\n========== CONCLUSION ==========\n")
+    print(report["conclusion"])
+
 if __name__ == "__main__":
 
     main()
