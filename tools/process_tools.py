@@ -12,11 +12,7 @@ import pandas as pd
 
 
 class DataProcessingTools:
-    """
-    Collection of preprocessing tools used by the Intelligent Preprocessing Agent.
-    Every method receives a DataFrame and returns a DataFrame.
-    """
-
+    
     @staticmethod
     def load_csv(path: str) -> pd.DataFrame:
         """
@@ -33,17 +29,13 @@ class DataProcessingTools:
 
     @staticmethod
     def save_csv(df: pd.DataFrame, path: str) -> None:
-        """
-        Save DataFrame to CSV.
-        """
+        
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         df.to_csv(path, index=False)
 
     @staticmethod
     def copy(df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Return dataframe copy.
-        """
+        
         return df.copy()
 
     @staticmethod
@@ -51,9 +43,7 @@ class DataProcessingTools:
         df: pd.DataFrame,
         columns: list[str],
     ) -> pd.DataFrame:
-        """
-        Drop selected columns.
-        """
+        
         return df.drop(columns=columns, errors="ignore")
 
     @staticmethod
@@ -61,18 +51,14 @@ class DataProcessingTools:
         df: pd.DataFrame,
         rows: list[int],
     ) -> pd.DataFrame:
-        """
-        Drop rows using index.
-        """
+        
         return df.drop(index=rows, errors="ignore")
 
     @staticmethod
     def remove_duplicates(
         df: pd.DataFrame,
     ) -> pd.DataFrame:
-        """
-        Remove duplicate rows.
-        """
+        
         return df.drop_duplicates()
 
     @staticmethod
@@ -80,9 +66,7 @@ class DataProcessingTools:
         df: pd.DataFrame,
         mapping: dict,
     ) -> pd.DataFrame:
-        """
-        Rename dataframe columns.
-        """
+        
         return df.rename(columns=mapping)
 
     @staticmethod
@@ -91,9 +75,7 @@ class DataProcessingTools:
         column: str,
         dtype: str,
     ) -> pd.DataFrame:
-        """
-        Change dtype of a column.
-        """
+      
         df = df.copy()
         df[column] = df[column].astype(dtype)
         return df
@@ -104,9 +86,7 @@ class DataProcessingTools:
         by: str,
         ascending: bool = True,
     ) -> pd.DataFrame:
-        """
-        Sort dataframe.
-        """
+        
         return df.sort_values(by=by, ascending=ascending)
 
     @staticmethod
@@ -114,18 +94,14 @@ class DataProcessingTools:
         df: pd.DataFrame,
         n: int = 5,
     ) -> pd.DataFrame:
-        """
-        Return random sample.
-        """
+        
         return df.sample(n=min(n, len(df)), random_state=42)
 
     @staticmethod
     def reset_index(
         df: pd.DataFrame,
     ) -> pd.DataFrame:
-        """
-        Reset dataframe index.
-        """
+        
         return df.reset_index(drop=True)
 
     @staticmethod
