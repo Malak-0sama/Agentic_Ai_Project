@@ -1,7 +1,5 @@
 import pandas as pd
-
 from agents.base_agent import BaseAgent
-
 from utils.column_utils import (
     detect_column_type,
     unique_ratio,
@@ -11,21 +9,11 @@ from utils.column_utils import (
     is_constant,
     column_memory,
 )
-
-
-
 class SchemaAgent(BaseAgent):
 
     def run(self, context):
 
-        file_path = context["file_path"]
-
-        df = pd.read_csv(
-            file_path,
-            encoding="latin1"
-        )
-
-        context["dataframe"] = df
+        df = context["dataframe"]
 
         context["schema"] = self.build_schema(df)
 
@@ -33,300 +21,144 @@ class SchemaAgent(BaseAgent):
 
     def build_schema(self, df):
 
-        schema = {
-
+        return {
             "dataset": self.build_dataset_metadata(df),
-
             "columns": self.build_columns_metadata(df),
-
-            "quality": self.build_quality_metadata(df)
-
+            "quality": self.build_quality_metadata(df),
         }
 
-        return schema
+    def build_dataset_metadata(self, df):
 
-        def build_dataset_metadata(self, df):
-
-         return {
+        return {
 
             "rows": len(df),
 
             "columns": len(df.columns),
 
             "memory_usage_mb": round(
-
-                df.memory_usage(deep=True).sum()
-
-                / (1024 ** 2),
-
-                2
-
+                df.memory_usage(deep=True).sum() / (1024 ** 2),
+                2,
             ),
 
-            "duplicate_rows": int(
+            "duplicate_rows": int(df.duplicated().sum()),
 
-                df.duplicated().sum()
+            "numeric_columns": len(
+                df.select_dtypes(include="number").columns
+            ),
 
-            )
+            "categorical_columns": len(
+                df.select_dtypes(
+                    include=["object", "category"]
+                ).columns
+            ),
 
+            "datetime_columns": len(
+                df.select_dtypes(
+                    include=["datetime64"]
+                ).columns
+            ),
         }
 
-        def build_columns_metadata(self, df):
+    def build_columns_metadata(self, df):
 
-          columns = {}
+        columns = {}
 
         for column in df.columns:
 
             series = df[column]
 
-            semantic_type = detect_column_type(series)
-
-            metadata = {
+            columns[column] = {
 
                 "dtype": str(series.dtype),
 
-                "semantic_type": semantic_type,
+                "semantic_type": detect_column_type(series),
 
-                "missing_count": int(
+                "nullable": bool(series.isnull().any()),
 
-                    series.isnull().sum()
-
-                ),
+                "missing_count": int(series.isnull().sum()),
 
                 "missing_ratio": round(
-
                     missing_ratio(series),
-
-                    4
-
+                    4,
                 ),
 
                 "unique_count": int(
-
                     series.nunique(dropna=True)
-
                 ),
 
                 "unique_ratio": round(
-
                     unique_ratio(series),
-
-                    4
-
+                    4,
                 ),
 
-                "memory_bytes": int(
+                "memory_bytes": column_memory(series),
 
-                    series.memory_usage(deep=True)
+                "is_constant": is_constant(series),
 
+                "has_outliers": has_outliers(series),
+
+                "is_identifier": is_identifier(
+                    column,
+                    series,
                 ),
-            "is_constant": is_constant(series),
 
-           "has_outliers": has_outliers(series),
-
-           "is_identifier": is_identifier(
-             column,
-             series
-),
-
-"memory_bytes": column_memory(series),
+                "sample_values": (
+                    series.dropna()
+                    .astype(str)
+                    .head(5)
+                    .tolist()
+                ),
             }
-
-            columns[column] = metadata
 
         return columns
 
     def build_quality_metadata(self, df):
 
-     total_missing = int(
-        df.isnull().sum().sum()
-    )
+        total_missing = int(
+            df.isnull().sum().sum()
+        )
 
-     total_cells = (
-        len(df)
-        * len(df.columns)
-    )
+        total_cells = len(df) * len(df.columns)
 
-     missing_ratio = (
-        total_missing / total_cells
-        if total_cells > 0
-        else 0
-    )
+        return {
 
-     quality_score = self.calculate_quality_score(df)
+            "missing_cells": total_missing,
 
-     return {
+            "missing_ratio": round(
+                total_missing / total_cells,
+                4,
+            ),
 
-        "missing_cells": total_missing,
+            "duplicate_rows": int(
+                df.duplicated().sum()
+            ),
 
-        "missing_ratio": round(
-            missing_ratio,
-            4
-        ),
-
-        "duplicate_rows": int(
-            df.duplicated().sum()
-        ),
-
-        "quality_score": quality_score
-
-    }
+            "quality_score": self.calculate_quality_score(df),
+        }
 
     def calculate_quality_score(self, df):
 
-     score = 100
+        score = 100
 
-    
-     missing_ratio = (
-        df.isnull()
-        .sum()
-        .sum()
-        /
-        (len(df) * len(df.columns))
-    )
-
-     score -= missing_ratio * 40
-
-    
-     duplicate_ratio = (
-        df.duplicated().sum()
-        /
-        len(df)
-    )
-
-     score -= duplicate_ratio * 30
-
-     constant_columns = 0
-
-     for column in df.columns:
-
-        if is_constant(df[column]):
-
-            constant_columns += 1
-
-     constant_ratio = (
-        constant_columns
-        /
-        len(df.columns)
-    )
-
-     score -= constant_ratio * 30
-
-     score = max(0, score)
-
-     return float(
-    round(score, 2)
-)
-
-    def build_dataset_metadata(self, df):
-
-     return {
-
-        "rows": len(df),
-
-        "columns": len(df.columns),
-
-        "memory_usage_mb": float(
-    round(
-        df.memory_usage(deep=True).sum()
-        / (1024 ** 2),
-        2
-    )
-),
-
-
-
- 
-        
-        "duplicate_rows": int(
-            df.duplicated().sum()
-        ),
-
-        "numeric_columns": len(
-            df.select_dtypes(include="number").columns
-        ),
-
-        "categorical_columns": len(
-            df.select_dtypes(
-                include=["object", "category"]
-            ).columns
-        ),
-
-        "datetime_columns": len(
-            df.select_dtypes(
-                include=["datetime64"]
-            ).columns
+        missing = (
+            df.isnull().sum().sum()
+            / (len(df) * len(df.columns))
         )
 
-    }
+        duplicates = (
+            df.duplicated().sum()
+            / len(df)
+        )
 
+        constant = sum(
+            is_constant(df[col])
+            for col in df.columns
+        ) / len(df.columns)
 
-    def build_columns_metadata(self, df):
+        score -= missing * 40
 
-     columns = {}
+        score -= duplicates * 30
 
-     for column in df.columns:
+        score -= constant * 30
 
-        series = df[column]
-
-        semantic_type = detect_column_type(series)
-
-        metadata = {
-
-            "dtype": str(series.dtype),
-
-            "semantic_type": semantic_type,
-
-            "nullable": bool(
-                series.isnull().any()
-            ),
-
-            "missing_count": int(
-                series.isnull().sum()
-            ),
-
-            "missing_ratio": float(
-    round(
-        missing_ratio(series),
-        4
-    )
-),
-
-            "unique_count": int(
-                series.nunique(dropna=True)
-            ),
-
-            "unique_ratio": float(
-    round(
-        unique_ratio(series),
-        4
-    )
-),
-
-            "memory_bytes": column_memory(series),
-
-            "is_constant": is_constant(series),
-
-            "has_outliers": has_outliers(series),
-
-            "is_identifier": is_identifier(
-                column,
-                series
-            ),
-
-            "sample_values": (
-    series
-    .dropna()
-    .sample(
-        n=min(5, len(series.dropna())),
-        random_state=42
-    )
-    .astype(str)
-    .tolist()
-)
-
-        }
-
-        columns[column] = metadata
-
-     return columns
+        return round(max(score, 0), 2)

@@ -20,3 +20,12 @@ models/
 # OS Files
 .DS_Store
 Thumbs.db
+
+
+# CatBoost
+catboost_info/
+
+
+# Logs
+logs/
+*.log
