@@ -25,19 +25,19 @@ class AgentWorkflow:
         print("BUSINESS AI AGENT WORKFLOW".center(70))
         print("=" * 70)
 
-        
+        print("Running Schema Agent...")
         context = self.schema_agent.run(context)
 
-        
+        print("Running Planner Agent...")
         context = self.planner_agent.run(context)
 
-        
+        print("Running Preprocessing Agent...")
         context = self.preprocessing_agent.run(context)
 
-        
+        print("Running Model Agent...")
         context = self.model_agent.run(context)
 
-        
+        print("Running Report Agent...")
         context = self.report_agent.run(context)
 
         print("\n" + "=" * 70)
