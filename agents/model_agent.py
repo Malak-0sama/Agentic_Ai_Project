@@ -34,7 +34,13 @@ class ModelAgent(BaseAgent):
         print("\n" + "=" * 70)
         print("MODEL AGENT")
         print("=" * 70)
+        # Remove identifier columns before validation
+        id_columns = ["Order ID", "Row ID"]
 
+        existing = [col for col in id_columns if col in df.columns]
+
+        if existing:
+         df = df.drop(columns=existing)
         print("\n[1/5] Validating dataset...")
         X, y = self.validator.validate(df, target)
 

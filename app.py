@@ -1,11 +1,17 @@
 import json
 import pandas as pd
 
-from core.workflow import AgentWorkflow
+from agents.model_agent import ModelAgent
+from agents.schema_agent import SchemaAgent
+from agents.llm_planner_agent import LLMPlannerAgent
+from agents.preprocessing_agent import PreprocessingAgent
+from agents.insights_report_agent import InsightsReportAgent
+
+
+DATASET_PATH = r"C:\Users\workstation\Desktop\business-ai-agent\uploads\Sample - Superstore.csv"
 
 
 def load_dataset(path):
-    
 
     encodings = [
         "utf-8",
@@ -15,52 +21,78 @@ def load_dataset(path):
     ]
 
     for enc in encodings:
+
         try:
-            df = pd.read_csv(path, encoding=enc)
-            print(f"\nDataset loaded successfully using {enc}")
+
+            df = pd.read_csv(
+                path,
+                encoding=enc,
+            )
+
+            print(f"\nDataset loaded using {enc}")
+
             return df
 
         except UnicodeDecodeError:
-            continue
+            pass
 
     raise Exception("Cannot read dataset.")
 
 
+
 def separator(title):
+
     print("\n")
     print("=" * 70)
     print(title.center(70))
     print("=" * 70)
 
 
-def main(dataset_path):
-   
 
-    
-    df = load_dataset(dataset_path)
+def main():
 
-    
-    workflow = AgentWorkflow()
-    context = workflow.run(df)
+    df = load_dataset(DATASET_PATH)
+
+    context = {
+        "dataframe": df
+    }
+
 
     #######################################################
+    # Schema Agent
+    #######################################################
 
-    separator("SCHEMA SUMMARY")
+    schema_agent = SchemaAgent()
+
+    context = schema_agent.run(context)
 
     schema = context["schema"]
+
+    separator("SCHEMA SUMMARY")
 
     dataset = schema["dataset"]
     quality = schema["quality"]
 
-    print(f"Rows          : {dataset['rows']}")
-    print(f"Columns       : {dataset['columns']}")
-    print(f"Numeric       : {dataset['numeric_columns']}")
-    print(f"Categorical   : {dataset['categorical_columns']}")
-    print(f"Datetime      : {dataset['datetime_columns']}")
+    print("Rows :", dataset["rows"])
+    print("Columns :", dataset["columns"])
+    print("Numeric :", dataset["numeric_columns"])
+    print("Categorical :", dataset["categorical_columns"])
+    print("Datetime :", dataset["datetime_columns"])
+
     print()
-    print(f"Quality Score : {quality['quality_score']}")
+
+    print("Quality :", quality["quality_score"])
+
+
 
     #######################################################
+    # Planner Agent
+    #######################################################
+
+    planner = LLMPlannerAgent()
+
+    context = planner.run(context)
+
 
     separator("EXECUTION PLAN")
 
@@ -68,15 +100,24 @@ def main(dataset_path):
         json.dumps(
             context["plan"],
             indent=4,
-            ensure_ascii=False,
+            ensure_ascii=False
         )
     )
 
+
+
+    #######################################################
+    # Preprocessing Agent
     #######################################################
 
-    separator("PROCESSED DATASET")
+    preprocessing = PreprocessingAgent()
+
+    context = preprocessing.run(context)
 
     processed = context["processed_dataframe"]
+
+
+    separator("PROCESSED DATASET")
 
     print(processed.head())
 
@@ -88,7 +129,16 @@ def main(dataset_path):
 
     processed.info()
 
+
+
     #######################################################
+    # Model Agent
+    #######################################################
+
+    model_agent = ModelAgent()
+
+    context = model_agent.run(context)
+
 
     separator("BEST MODEL")
 
@@ -98,65 +148,95 @@ def main(dataset_path):
     print(f"Metric : {best['metric']}")
     print(f"Score  : {best['score']}")
 
+
+
+    #######################################################
+    # Evaluation Results
     #######################################################
 
     separator("MODEL EVALUATION")
 
+
     results = context["evaluation_results"]
+
 
     for name, result in results.items():
 
         if name.startswith("_"):
             continue
 
+
         print("\n" + "-" * 50)
+
         print(name)
+
         print("-" * 50)
+
 
         print("Status :", result["status"])
 
+
         if result["status"] == "failed":
+
             print("Error :", result["error"])
+
             continue
 
+
         print("Training Time :", result["train_time"])
+
         print()
 
-        for metric, value in result["metrics"].items():
+
+        metrics = result["metrics"]
+
+
+        for metric, value in metrics.items():
 
             if isinstance(value, (int, float)):
-                print(f"{metric:<20}: {value:.4f}")
+
+                print(f"{metric:<15}: {value:.4f}")
+
+
 
     #######################################################
+    # Insights Report Agent
+    #######################################################
 
-    separator("AI INSIGHTS REPORT")
+    report_agent = InsightsReportAgent()
 
-    report = context["insights_report"]
+    context = report_agent.run(context)
 
-    print("\n========== EXECUTIVE SUMMARY ==========\n")
-    print(report["executive_summary"])
 
-    print("\n========== KEY INSIGHTS ==========\n")
 
-    for insight in report["key_insights"]:
-        print(f"- {insight}")
+    #######################################################
+    # Final Business Report
+    #######################################################
 
-    print("\n========== MODEL PERFORMANCE ==========\n")
-    print(report["model_performance"])
+    separator("BUSINESS REPORT")
 
-    print("\n========== BUSINESS RECOMMENDATIONS ==========\n")
 
-    for recommendation in report["business_recommendations"]:
-        print(f"- {recommendation}")
+    report = context["report"]
 
-    print("\n========== CONCLUSION ==========\n")
-    print(report["conclusion"])
 
-    return context
+    if isinstance(report, dict):
 
+        print(
+            json.dumps(
+                report,
+                indent=4,
+                ensure_ascii=False
+            )
+        )
+
+    else:
+
+        print(report)
+
+
+
+#######################################################
 
 if __name__ == "__main__":
 
-    main(
-        r"C:\Users\workstation\Desktop\business-ai-agent\uploads\Sample - Superstore.csv"
-    )
+    main()

@@ -1,4 +1,5 @@
 from copy import deepcopy
+from turtle import pd
 
 from agents.base_agent import BaseAgent
 from agents.tool_registry import TOOL_REGISTRY
@@ -31,7 +32,12 @@ class PreprocessingAgent(BaseAgent):
         context["processed_dataframe"] = df
         context["processed_data"] = df
         context["processing_history"] = history
-
+        for col in df.columns:
+          if "date" in col.lower():
+            try:
+                 df[col] = pd.to_datetime(df[col], errors="coerce")
+            except Exception:
+             pass
         self._print_summary(history)
 
         return context

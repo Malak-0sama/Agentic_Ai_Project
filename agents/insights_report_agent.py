@@ -10,49 +10,122 @@ class InsightsReportAgent(BaseAgent):
     def __init__(self):
         self.llm = GeminiProvider()
 
+
     def run(self, context):
 
         evaluation = context["evaluation_results"]
+
         best = context["best_model"]
+
         plan = context["plan"]
 
+
         best_model_name = best["model_name"]
+
 
         best_result = evaluation[best_model_name]
 
         metrics = best_result["metrics"]
 
+
+
+        # Extract task information from planner
+        task_info = plan.get("task", {})
+
+
+        task_type = task_info.get(
+            "type",
+            "Unknown"
+        )
+
+
+        # Try different possible target keys
+        target_variable = (
+            task_info.get("target")
+            or
+            task_info.get("target_column")
+            or
+            plan.get("target")
+            or
+            plan.get("target_column")
+            or
+            "Unknown"
+        )
+
+
+
         results = {
-            "model": best_model_name,
-            "task": plan["task"]["type"],
-            "primary_metric": best["metric"],
-            "primary_score": best["score"],
+
+            "model_information": {
+
+                "model_name": best_model_name,
+
+                "problem_type": task_type,
+
+                "target_variable": target_variable
+
+            },
+
+
+            "model_performance": {
+
+                "primary_metric": best["metric"],
+
+                "primary_score": best["score"],
+
+                "metrics": metrics
+
+            },
+
+
+            "task_information": {
+
+                "task_type": task_type,
+
+                "target": target_variable
+
+            }
+
         }
 
-        for key, value in metrics.items():
 
-            if isinstance(value, (int, float)):
-                results[key] = value
 
         prompt = build_insights_report_prompt(results)
 
+
+
         response = self.llm.generate(prompt)
 
+
+
         response = (
-            response.strip()
+            response
+            .strip()
             .replace("```json", "")
             .replace("```", "")
             .strip()
         )
 
+
+
         try:
+
             insights_report = json.loads(response)
+
 
         except json.JSONDecodeError:
 
+            print("Invalid JSON returned from LLM:")
+
             print(response)
+
             raise
 
-        context["insights_report"] = insights_report
+
+
+        # Store final report in shared context
+
+        context["report"] = insights_report
+
 
         return context

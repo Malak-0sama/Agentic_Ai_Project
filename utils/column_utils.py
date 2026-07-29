@@ -8,6 +8,41 @@ from config.constants import (
     IDENTIFIER_SCORE_THRESHOLD,
 )
 
+# Fraction of non-null sample values that must parse as dates.
+_DATETIME_PARSE_THRESHOLD = 0.85
+_DATETIME_SAMPLE_SIZE = 100
+
+
+def _looks_like_datetime(series: pd.Series) -> bool:
+    """
+    Detect datetime-like string/object columns without requiring a
+    native datetime64 dtype (CSV loads usually keep dates as strings).
+    Uses coerce + a success-rate threshold so mixed garbage does not
+    raise, and random columns of IDs/names are not misclassified.
+    """
+    non_null = series.dropna()
+    if len(non_null) == 0:
+        return False
+
+    sample = non_null
+    if len(non_null) > _DATETIME_SAMPLE_SIZE:
+        sample = non_null.sample(_DATETIME_SAMPLE_SIZE, random_state=42)
+
+    try:
+        converted = pd.to_datetime(
+            sample.astype(str),
+            errors="coerce",
+            format="mixed",
+        )
+    except (TypeError, ValueError, OverflowError):
+        try:
+            converted = pd.to_datetime(sample.astype(str), errors="coerce")
+        except Exception:
+            return False
+
+    success_ratio = float(converted.notna().mean())
+    return success_ratio >= _DATETIME_PARSE_THRESHOLD
+
 
 def detect_column_type(series: pd.Series):
 
@@ -21,26 +56,16 @@ def detect_column_type(series: pd.Series):
     if pd.api.types.is_datetime64_any_dtype(series):
         return "datetime"
 
-    if pd.api.types.is_string_dtype(series):
-
-     try:
-
-        converted = pd.to_datetime(
-            series.dropna(),
-            errors="raise"
-        )
-
-        if len(converted) > 0:
-
-            return "datetime"
-
-     except Exception:
-
-        pass    
     if pd.api.types.is_numeric_dtype(series):
         return "numeric"
 
-    if pd.api.types.is_string_dtype(series):
+    # String / object columns may hold parseable dates (e.g. Order Date).
+    if (
+        pd.api.types.is_string_dtype(series)
+        or pd.api.types.is_object_dtype(series)
+    ):
+        if _looks_like_datetime(series):
+            return "datetime"
 
         avg_length = (
             series

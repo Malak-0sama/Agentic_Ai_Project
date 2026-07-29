@@ -29,16 +29,33 @@ class SchemaAgent(BaseAgent):
 
     def build_dataset_metadata(self, df):
 
+        # Semantic datetime detection covers CSV date strings that are
+        # still stored as object/str (select_dtypes datetime64 alone
+        # misses them). Exclude those from the categorical count so
+        # Order Date / Ship Date are not double-counted.
+        datetime_cols = [
+            col for col in df.columns
+            if detect_column_type(df[col]) == "datetime"
+        ]
+        datetime_set = set(datetime_cols)
+
+        categorical_like = df.select_dtypes(
+            include=["object", "category", "string", "str"]
+        ).columns
+        categorical_cols = [
+            col for col in categorical_like if col not in datetime_set
+        ]
+
         return {
 
             "rows": len(df),
 
             "columns": len(df.columns),
 
-            "memory_usage_mb": round(
+            "memory_usage_mb": float(round(
                 df.memory_usage(deep=True).sum() / (1024 ** 2),
                 2,
-            ),
+            )),
 
             "duplicate_rows": int(df.duplicated().sum()),
 
@@ -46,17 +63,9 @@ class SchemaAgent(BaseAgent):
                 df.select_dtypes(include="number").columns
             ),
 
-            "categorical_columns": len(
-                df.select_dtypes(
-                    include=["object", "category"]
-                ).columns
-            ),
+            "categorical_columns": len(categorical_cols),
 
-            "datetime_columns": len(
-                df.select_dtypes(
-                    include=["datetime64"]
-                ).columns
-            ),
+            "datetime_columns": len(datetime_cols),
         }
 
     def build_columns_metadata(self, df):

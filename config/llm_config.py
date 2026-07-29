@@ -7,9 +7,8 @@ load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-GEMINI_MODEL = "gemini-3.5-flash"
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
 
-if not GEMINI_API_KEY:
-    raise ValueError(
-        "GEMINI_API_KEY is not set in the environment variables."
-    )
+# Do not raise at import time — that would break Streamlit diagnostics and
+# unrelated module imports when the key is temporarily missing. Callers that
+# need the API (GeminiProvider) still validate and raise a clear error.
